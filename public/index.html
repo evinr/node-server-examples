@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Web Site Pinger</title>
+<style>
+form {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}  
+</style>
+</head>
+<body>
+<form id="form">
+	<h1>Please enter the requested information below</h1>
+	<input type="text" placeholder="Domain" name="domain" id="p1">
+	<input type="text" placeholder="Username" name="username" id="p2">
+	<input type="password" placeholder="Password" name="password" id="p3">
+	<input type="text" placeholder="Times to Ping" name="articles" id="p4">
+	<button type="button" onclick="post()">Submit</button>
+</form>
+</body>
+<script>
+
+	function post(path, params, method) {
+    method = method || "post"; // Set method to post by default if not specified.
+
+    // The rest of this code assumes you are not using a library.
+    // It can be made less wordy if you use one.
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", 'scrape');
+
+    for(var key in params) {
+        if(params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+
+            form.appendChild(hiddenField);
+         }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+
+	}
+
+</script>
+</html>
