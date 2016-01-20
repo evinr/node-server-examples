@@ -3,6 +3,10 @@ var fs = require('fs');
 var request = require('request');
 var cheerio = require('cheerio');
 var app     = express();
+var exec = require('child_process').exec,
+child;
+
+
 
 app.use(express.static('public'));
 
@@ -33,6 +37,14 @@ app.post('/scrape', function(req, res){
             res.send('failed');
         }
     })
+})
+
+app.get('/command', function (req, res) {
+     exec('curl https://google.com',
+      function (error, stdout, stderr) {
+        console.log('stdout: ' + stdout);
+        res.send( stdout);
+    });
 })
 
 app.listen('8081')
