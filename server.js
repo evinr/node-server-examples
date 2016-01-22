@@ -3,44 +3,37 @@ var fs = require('fs');
 var request = require('request');
 var cheerio = require('cheerio');
 var app     = express();
-var exec = require('child_process').exec,
-child;
-
+var exec = require('child_process').exec;
+var cookieParser = require('cookie-parser');
 
 
 app.use(express.static('public'));
 
-app.get('/scrape', function(req, res){
+app.get('/basicGet', function(req, res){
     console.log('Get made...');
 
-    var $ = cheerio.load('<h1 class="title">Do a post instead!/h1>');
+    var $ = cheerio.load('<h1> Congratulaitons you won!');
     res.send( $.html());
 })
     
 app.post('/scrape', function(req, res){
     console.log('Post made...');
     console.log(req);
-    // The structure of our request call
-    // The first parameter is our URL
     // The callback function takes 3 parameters, an error, response status code and the html
     url = 'https://username:password@domain';
     request(url, function(error, response, html){
-        
         // Check to make sure no errors occurred when making the request
         if(!error){
-
-            res.send('checked');
-           
+            res.send('The post was successful: ', response);     
         }
         else {
-            //trigger error message on page
-            res.send('failed');
+            res.send('The post failed: ', response);
         }
     })
 })
 
-app.get('/command', function (req, res) {
-     exec('curl https://google.com',
+app.get('/commandLine', function (req, res) {
+     exec('curl https://www.google.com',
       function (error, stdout, stderr) {
         console.log('stdout: ' + stdout);
         res.send( stdout);
