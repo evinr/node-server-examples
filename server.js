@@ -6,6 +6,7 @@ var expressapp     = express();
 var bodyParser = require('body-parser');
 var exec = require('child_process').exec;
 var cookieParser = require('cookie-parser');
+var Firebase = require('firebase');
 
 //Configuring middleware
 expressapp.use(cookieParser());
@@ -106,7 +107,171 @@ expressapp.get('/replaceFile', function(req, res) {
     res.write(file);
     res.end();
 })
-//Sets up the listener for the express app
+
+//Uses promises to asyncronously scrap a years worth of results from a page
+expressapp.get('/', function(req, res){
+   
+var a = moment('2016-01-01');
+var b = moment('2017-01-01');
+var allHolidays = {}
+
+// pure function ;-)
+var makeUrl = function(momentDate) {
+    var date = momentDate.format('MM/DD/YYYY')
+        return {
+            url: "https://www.checkiday.com/" + date,
+            date: date
+        };
+};
+
+var makeRequestPromise = function(url, date) {
+    return new Promise(function(resolve, reject) {
+        request(url, function(error, response, html){
+            if(error){
+                return reject(error);     
+            }
+
+
+            var $ = cheerio.load(html);
+
+            var name, source;
+            var json = { name : "", source : ""};
+            var holidays = [];
+
+            $('#middle_content').each(function(){
+                var data = $(this);
+                var total = data.children('2').children()._root['0'].children[4].next.children.length - 4;
+                var parseMe = data.children('2').children()._root['0'].children[4].next.children;
+
+                for (i =1; i <= total; i += 2) {
+
+                    name = parseMe[i].children[1].children[1].attribs.title.toString();
+                    source = parseMe[i].children[1].children[1].attribs.href.toString();
+                    console.log(name)
+                    var nameRegex = /is\s\"?(.*)\"?!/g;
+                    json.name = name.length > 19 ? nameRegex.exec(name)[1] : null;
+                    json.source = source;
+
+                    holidays.push(json)
+                    json = { name : "", source : ""};
+                }
+
+                
+            });
+            
+              allHolidays[date] = holidays; //m.format('MM-DD-YYYY')
+                var file = fs.readFileSync('output.json', 'utf8');
+                var dataToWrite = JSON.stringify(allHolidays, null, 4);
+                fs.writeFileSync('output.json', dataToWrite, 'utf8');
+              // finish promise
+          resolve('File write successfull ' + url);
+        });
+    });
+};
+
+var promises = [];
+
+for (var m = a; m.isBefore(b); m.add( 1, 'days')) {
+    var mUrlObject = makeUrl(m)
+    promises.push(
+        makeRequestPromise( mUrlObject.url, mUrlObject.date )
+    ); 
+}
+
+Promise.all(promises)
+  .catch(function(err){ return console.error('Error in Promises.all()',err); })
+  .then(function(msg) {
+        // ^^ 'msg' param is an array of returned values
+    console.log(msg); // array of resolve(msg) from above..
+  });
+
+    //res.write('Mission Accomplished!');
+    res.end();
+})
+
+
+//Dynamic file system management
+expressapp.get('/list', function(req, res) { //returns a list of app pages
+    //lists the apps via the folder structure
+    var list;
+    var getApps = function () { 
+        return new Promise(function(resolve, reject) { 
+            
+            exec('for i in $(ls ./public/apps); do echo ${i%%/}; done',
+                function (error, stdout, stderr) {
+                    list = stdout.split('\n');
+                    list.pop() // removes the last element, which is empty
+                    
+                    console.log(list);
+                    // return list;
+                    
+                    // res.send(list);
+            });
+            resolve(list);
+        });
+    }
+
+    Promise.all([getApps(), getApps()])
+    .catch(function(err){ return console.error('Error in Promises.all()',err); })
+    .then(function(msg) {
+        // ^^ 'msg' param is an array of returned values from within the resolve above
+        console.log(msg); // array of resolve(msg) from above..
+        res.send(JSON.stringify(msg))
+        
+    });
+
+
+    //lists the config values for each app
+
+    //take object with apps, names, and keys
+
+    //render the UI dynamically
+
+})
+
+expressapp.get('/copy', function(req, res) {
+    //var arg = req.param('username'); //maps to the 'name' field on the input
+    var target = 'app1';//needs to be read via the req
+    var command = 'cp -r ./public/apps/' + target + ' ./public/apps/' + target + '-clone';
+
+    //returns a list of app pages
+    exec(command,
+        function (error, stdout, stderr) {
+            // var list = stdout.split('\n');
+            res.send('successful');
+    });
+})
+
+//rename
+expressapp.get('/rename', function(req, res) {
+    //var arg = req.param('username'); //maps to the 'name' field on the input
+    var target = 'app1';//these values need to be from the req
+    var newName = 'app5';
+    var command = 'mv ./public/apps/' + target + ' ./public/apps/' + newName;
+    exec(command,
+        function (error, stdout, stderr) {
+            res.send('successful');
+    });
+})
+
+//firebase demo
+
+expressapp.get('/fireset', function(req, res) {
+    var dataRef = new Firebase('https://testmcdemo.firebaseio.com/');
+    dataRef.set({"stuff":{"junk":"hello world!","more":"asdfasdfasdf"}});
+    //send confirmation it was set
+    res.send('data was set!');
+})
+
+expressapp.get('/fireget', function(req, res) {
+        var dataRef = new Firebase('https://testmcdemo.firebaseio.com/');
+    dataRef.child("stuff/more").on("value", function(snapshot) {
+        //          ^^^ path to the data
+  res.send(snapshot.val());  // Alerts "San Francisco"
+});
+})
+
+//Sets up the listener for the express appju
 expressapp.listen('8081')
 
 //Splash screen including the Node JS logo ascii art
