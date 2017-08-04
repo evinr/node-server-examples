@@ -8,13 +8,14 @@
   },
   "author": "",
   "dependencies": {
+    "body-parser": "latest",
     "cheerio": "latest",
+    "cookie-parser": "latest",
     "cookieparser": "^0.1.0",
     "express": "latest",
-    "nodemon": "latest",
-    "request": "latest",
-    "body-parser": "latest",
-    "cookie-parser": "latest"
+    "firebase": "^4.2.0",
+    "nodemon": "^1.11.0",
+    "request": "latest"
   },
   "license": "MIT"
 }
